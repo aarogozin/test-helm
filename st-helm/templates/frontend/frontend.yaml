@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "st-helm.fullname" . }}-frontend
+  labels:
+    type: frontend
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      type: frontend
+  template:
+    metadata:
+      labels:
+        type: frontend
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-frontend
+          image: "{{ .Values.frontend_image.repository }}:{{ .Values.frontend_image.tag | default "latest" }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

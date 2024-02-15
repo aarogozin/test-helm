@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "st-helm.fullname" . }}-database
+  labels:
+    type: database
+spec:
+  selector:
+    matchLabels:
+      type: database
+  template:
+    metadata:
+      labels:
+        type: database
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: {{ .Chart.Name }}-database
+          image: "{{ .Values.database_image.repository }}:{{ .Values.database_image.tag | default "latest" }}"
+          ports:
+          - containerPort: 3306
+          volumeMounts: 
+          - name: mysql-store
+            mountPath: /var/lib/mysql
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          command: ['sh', '-c', "sleep 100m"]
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-password
+                  key: MYSQL_ROOT_PASSWORD
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-store
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+
+      resources:
+        requests:
+          storage: 1Gi
